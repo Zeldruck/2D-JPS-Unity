@@ -16,14 +16,16 @@ namespace Zeldruck.JPS2D
 			grid = GetComponent<Grid>();
 		}
 
-		public void StartFindPath(Vector3 startPos, Vector3 targetPos) 
+		public void StartFindPath(Vector3 startPos, Vector3 targetPos, bool isAstar) 
 		{
-			StartCoroutine(FindPath(startPos,targetPos));
+			if (isAstar)
+				StartCoroutine(FindPathAStar(startPos, targetPos));
+			else
+				StartCoroutine(FindPathJPS(startPos, targetPos));
 		}
 		
-		IEnumerator FindPath(Vector3 startPos, Vector3 targetPos) 
+		IEnumerator FindPathAStar(Vector3 startPos, Vector3 targetPos) 
 		{
-
 			Vector3[] waypoints = Array.Empty<Vector3>();
 			bool pathSuccess = false;
 			
@@ -73,13 +75,76 @@ namespace Zeldruck.JPS2D
 			
 			if (pathSuccess) 
 			{
-				waypoints = RetracePath(startNode, targetNode);
+				waypoints = RetracePath(startNode, targetNode, true);
 			}
 			
 			requestManager.FinishedProcessingPath(waypoints, pathSuccess);
 		}
 		
-		Vector3[] RetracePath(Node startNode, Node endNode) 
+		IEnumerator FindPathJPS(Vector3 startPos, Vector3 targetPos)
+        {
+	        Vector3[] wayPoints = Array.Empty<Vector3>();
+            bool pathSuccess = false;
+            
+            Node startNode = grid.NodeFromWorldPoint(startPos);
+            Node targetNode = grid.NodeFromWorldPoint(targetPos);
+            
+            if (!startNode.isObstructed && !targetNode.isObstructed)
+            {
+                Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
+                HashSet<Node> closeSet = new HashSet<Node>();
+
+                openSet.Add(startNode);
+                
+                while (openSet.Count > 0)
+                {
+                    Node currentNode = openSet.RemoveFirst();
+
+                    closeSet.Add(currentNode);
+
+                    if (currentNode == targetNode)
+                    {
+                        pathSuccess = true;
+                        break;
+                    }
+
+                    List<Node> neighbours = grid.PruneNeighbours(currentNode, targetNode);
+
+                    foreach (Node neighbour in neighbours)
+                    {
+                        if (neighbour.isObstructed || closeSet.Contains(neighbour))
+                            continue;
+
+                        int newMovementCostToNeighbour = currentNode.gCost + GetDistance(currentNode, neighbour);
+
+                        if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                        {
+                            neighbour.gCost = newMovementCostToNeighbour;
+                            neighbour.hCost = GetDistance(neighbour, targetNode);
+
+                            neighbour.parent = currentNode;
+
+                            if (!openSet.Contains(neighbour))
+                                openSet.Add(neighbour);
+                            else
+                                openSet.UpdateItem(neighbour);
+                        }
+                    }
+                }
+            }
+            
+            yield return null;
+
+            if (pathSuccess)
+            {
+                wayPoints = RetracePath(startNode, targetNode, false);
+                pathSuccess = wayPoints.Length > 0;
+            }
+  
+            requestManager.FinishedProcessingPath(wayPoints, pathSuccess);
+        }
+		
+		Vector3[] RetracePath(Node startNode, Node endNode, bool isAstar) 
 		{
 			List<Node> path = new List<Node>();
 			Node currentNode = endNode;
@@ -89,12 +154,25 @@ namespace Zeldruck.JPS2D
 				path.Add(currentNode);
 				currentNode = currentNode.parent;
 			}
+
+			Vector3[] waypoints;
 			
-			Vector3[] waypoints = SimplifyPath(path);
+			if (isAstar)
+			{
+				waypoints = SimplifyPath(path);
+			}
+			else
+			{
+				waypoints = new Vector3[path.Count];
+				for (int i = 0; i < waypoints.Length; i++)
+				{
+					waypoints[i] = path[i].position;
+				}
+			}
+
 			Array.Reverse(waypoints);
 			
 			return waypoints;
-			
 		}
 		
 		Vector3[] SimplifyPath(List<Node> path) 
