@@ -1,12 +1,12 @@
 {
-    "name": "com.Zeldruck.2D-JPS",
+    "name": "com.zeldruck.2d-jps",
     "version": "1.0.0",
-    "displayName": "2D JPS",
+    "displayName": "Zeldruck 2D JPS",
     "description": "A* and JPS pathfinding for 2d space.",
     "unity": "2019.1",
-    "unityRelease": "0b5",
     "author": {
       "name": "Zeldruck",
+      "email": "felix.jouanneau.pro@gmail.com",
       "url": "https://www.felix-jouanneau.fr"
     }
   }
