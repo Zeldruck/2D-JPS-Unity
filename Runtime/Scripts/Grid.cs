@@ -66,6 +66,101 @@ namespace Zeldruck.JPS2D
 
 			return neighbours;
 		}
+
+		#region JPS
+
+		public List<Node> PruneNeighbours(Node currentNode, Node destinationNode)
+		{
+			List<Node> returnNeighbours = new List<Node>();
+            
+			List<Node> neighbours = GetNeighbours(currentNode);
+
+			foreach (Node neighbour in neighbours)
+			{
+				int x = Mathf.Clamp(neighbour.gridX - currentNode.gridX, -1, 1);
+				int y = Mathf.Clamp(neighbour.gridZ - currentNode.gridZ, -1, 1);
+
+				Node jumpPoint = Jump(currentNode, x, y, destinationNode);
+                
+				if (jumpPoint != null)
+					returnNeighbours.Add(jumpPoint);
+			}
+
+			return returnNeighbours;
+		}
+		
+		private Node Jump(Node currentNode, int xDirection, int yDirection, Node destination)
+        {
+            int xJumpPosition = currentNode.gridX + xDirection;
+            int yJumpPosition = currentNode.gridZ + yDirection;
+
+            if (!IsWalkable(xJumpPosition, yJumpPosition))
+                return null;
+
+            Node jumpPoint = grid[xJumpPosition, yJumpPosition];
+
+            if (jumpPoint == destination)
+                return jumpPoint;
+
+            // Horizontals
+            if (xDirection != 0 && yDirection == 0)
+            {
+                if (!IsWalkable(currentNode.gridX, currentNode.gridZ + 1) &&
+                    IsWalkable(currentNode.gridX + xDirection, currentNode.gridZ + 1))
+                {
+                    return jumpPoint;
+                }
+                else if (!IsWalkable(currentNode.gridX, currentNode.gridZ - 1) &&
+                         IsWalkable(currentNode.gridX + xDirection, currentNode.gridZ - 1))
+                {
+                    return jumpPoint;
+                }
+            }
+            // Verticals
+            else if (xDirection == 0 && yDirection != 0)
+            {
+                if (!IsWalkable(currentNode.gridX + 1, currentNode.gridZ) &&
+                    IsWalkable(currentNode.gridX + 1, currentNode.gridZ + yDirection))
+                {
+                    return jumpPoint;
+                }
+                else if (!IsWalkable(currentNode.gridX - 1, currentNode.gridZ) &&
+                         IsWalkable(currentNode.gridX - 1, currentNode.gridZ + yDirection))
+                {
+                    return jumpPoint;
+                }
+            }
+            // Diagonals
+            else if (xDirection != 0 && yDirection != 0)
+            {
+                if (!IsWalkable(currentNode.gridX + xDirection, currentNode.gridZ))
+                {
+                    return jumpPoint;
+                }
+                else if (!IsWalkable(currentNode.gridX, currentNode.gridZ + yDirection))
+                {
+                    return jumpPoint;
+                }
+
+                if (Jump(jumpPoint, xDirection, 0, destination) != null ||
+                    Jump(jumpPoint, 0, yDirection, destination) != null)
+                {
+                    return jumpPoint;
+                }
+            }
+
+            return Jump(jumpPoint, xDirection, yDirection, destination);
+        }
+		
+		private bool IsWalkable(int gridX, int gridZ)
+		{
+			if (gridX < 0 || gridX > gridSizeX - 1 || gridZ < 0 || gridZ > gridSizeZ - 1)
+				return false;
+
+			return !grid[gridX, gridZ].isObstructed;
+		}
+
+		#endregion
 		
 
 		public Node NodeFromWorldPoint(Vector3 worldPosition) 
