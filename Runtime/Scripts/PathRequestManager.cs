@@ -20,9 +20,9 @@ namespace Zeldruck.JPS2D
             pathfinding = GetComponent<Pathfinding>();
         }
 
-        public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Vector3[], bool> callback) 
+        public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Vector3[], bool> callback, bool isAstar) 
         {
-            PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback);
+            PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback, isAstar);
             
             instance.pathRequestQueue.Enqueue(newRequest);
             
@@ -37,7 +37,7 @@ namespace Zeldruck.JPS2D
                 
                 isProcessingPath = true;
                 
-                pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd);
+                pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, currentPathRequest.isAstar);
             }
         }
 
@@ -55,13 +55,15 @@ namespace Zeldruck.JPS2D
             public Vector3 pathEnd;
             public Action<Vector3[], bool> callback;
 
-            public PathRequest(Vector3 _start, Vector3 _end, Action<Vector3[], bool> _callback) 
+            public bool isAstar;
+
+            public PathRequest(Vector3 _start, Vector3 _end, Action<Vector3[], bool> _callback, bool _isAstar) 
             {
                 pathStart = _start;
                 pathEnd = _end;
                 callback = _callback;
+                isAstar = _isAstar;
             }
-
         }
     }
 }
