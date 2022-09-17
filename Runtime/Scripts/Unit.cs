@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -10,10 +11,14 @@ namespace Zeldruck.JPS2D
         
         [SerializeField] private Transform target;
         [SerializeField] private float speed = 20;
-        
-        void Start() 
+        [SerializeField] private bool useAstar;
+
+        private void Update()
         {
-            PathRequestManager.RequestPath(transform.position, target.position, OnPathFound);
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                PathRequestManager.RequestPath(transform.position, target.position, OnPathFound, useAstar);
+            }
         }
 
         public void OnPathFound(Vector3[] newPath, bool pathSuccessful) 
